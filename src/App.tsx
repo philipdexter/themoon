@@ -3,16 +3,20 @@ import { SkyDome } from './components/SkyDome'
 import { TimeSlider } from './components/TimeSlider'
 import { MoonInfo } from './components/MoonInfo'
 import { LocationControls } from './components/LocationControls'
+import { CompassGuide } from './components/CompassGuide'
 import { TRAJECTORY_STEPS } from './astronomy/moonCalculations'
 import { useLocation } from './hooks/useLocation'
 import { useMoonData } from './hooks/useMoonData'
+import { useCompassGuide } from './hooks/useCompassGuide'
 
 function App() {
   const { location, status, error, requestLocation, applyManualLocation } = useLocation()
   const [startTime, setStartTime] = useState(() => new Date())
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
   const moonData = useMoonData(location, startTime)
+  const compass = useCompassGuide()
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -47,6 +51,16 @@ function App() {
     if (index === 0) setStartTime(new Date())
   }
 
+  const openGuide = () => {
+    setGuideOpen(true)
+    void compass.start()
+  }
+
+  const closeGuide = () => {
+    setGuideOpen(false)
+    compass.stop()
+  }
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -78,7 +92,12 @@ function App() {
 
         {moonData ? (
           <>
-            <SkyDome data={moonData} selected={moonData.samples[selectedIndex]} selectedIndex={selectedIndex} />
+            <SkyDome
+              data={moonData}
+              selected={moonData.samples[selectedIndex]}
+              selectedIndex={selectedIndex}
+              onOpenGuide={openGuide}
+            />
             <TimeSlider
               index={selectedIndex}
               selectedTime={moonData.samples[selectedIndex].time}
@@ -103,6 +122,15 @@ function App() {
         <p>Calculated on your device with Astronomy Engine.</p>
         <p>Azimuth runs clockwise from true north · Refraction modelled near the horizon</p>
       </footer>
+      {guideOpen && moonData && (
+        <CompassGuide
+          target={moonData.samples[selectedIndex]}
+          status={compass.status}
+          reading={compass.reading}
+          onRetry={() => void compass.start()}
+          onClose={closeGuide}
+        />
+      )}
     </div>
   )
 }

@@ -12,6 +12,7 @@ interface SkyDomeProps {
   data: MoonData
   selected: MoonPosition
   selectedIndex: number
+  onOpenGuide: () => void
 }
 
 const CENTER = 350
@@ -21,7 +22,7 @@ function formatMarkerTime(date: Date) {
   return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date)
 }
 
-export function SkyDome({ data, selected, selectedIndex }: SkyDomeProps) {
+export function SkyDome({ data, selected, selectedIndex, onOpenGuide }: SkyDomeProps) {
   const selectedTime = selected.time.getTime()
   const visibleSegments = useMemo(
     () => splitVisibleSegments(data.samples).map((segment) => projectSegment(segment, RADIUS, CENTER, CENTER)),
@@ -48,9 +49,20 @@ export function SkyDome({ data, selected, selectedIndex }: SkyDomeProps) {
           <p className="eyebrow">Observer's sky</p>
           <h2 id="sky-title">Look up, then turn {selected.direction.toLowerCase()}</h2>
         </div>
-        <div className={`visibility-chip ${selected.aboveHorizon ? '' : 'visibility-chip--below'}`}>
-          <span className="visibility-chip__dot" />
-          {selected.aboveHorizon ? `${selected.altitude.toFixed(1)}° above horizon` : 'Below the horizon'}
+        <div className="sky-heading__actions">
+          <div className={`visibility-chip ${selected.aboveHorizon ? '' : 'visibility-chip--below'}`}>
+            <span className="visibility-chip__dot" />
+            {selected.aboveHorizon ? `${selected.altitude.toFixed(1)}° above horizon` : 'Below the horizon'}
+          </div>
+          <button
+            type="button"
+            className="guide-button"
+            onClick={onOpenGuide}
+            disabled={!selected.aboveHorizon}
+            title={selected.aboveHorizon ? 'Use phone sensors to find this position' : 'The Moon is below the horizon at this time'}
+          >
+            <span aria-hidden="true">⌖</span> Guide me
+          </button>
         </div>
       </div>
       <p className={`sun-state sun-state--${selected.skyCondition}`}><span />{conditionLabel}</p>
